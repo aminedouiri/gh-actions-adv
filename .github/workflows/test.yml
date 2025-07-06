@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  get-action-js:
+  test-get-employee-js-action:
     name: Test Get Employee Action (JavaScript)
     runs-on: ubuntu-latest
 
@@ -23,21 +23,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: get-action-js/.nvmrc
-          cache-dependency-path: get-action-js
+          node-version-file: get-employee-js-action/.nvmrc
+          cache-dependency-path: get-employee-js-action
           cache: npm
 
       - name: Install Dependencies
         run: npm ci
-        working-directory: get-action-js
+        working-directory: get-employee-js-action
 
       - name: Test Get Employee (JavaScript) Action
-        id: get-action-js
-        uses: ./get-action-js
+        id: test-employee-js-action
+        uses: ./get-employee-js-action
         with:
           github-username: ${{ github.actor }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           slack-token: ${{ secrets.SLACK_TOKEN }}
 
       - name: Print Slack User ID
-        run: echo "${{ steps.get-action-js.outputs.slack-user-id }}"
+        run: echo "${{ steps.test-employee-js-action.outputs.slack-user-id }}"
