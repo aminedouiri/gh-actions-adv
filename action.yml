@@ -1,0 +1,61 @@
+name: 'Send Build Status Notification to Slack User (DEMO)'
+description: "Reports the build status to the GitHub user who triggered the workflow via Slack. This is a demo action, DO NOT USE."
+
+inputs:
+  github-token:
+    description: 'The GitHub token to authenticate with GitHub API'
+    required: true
+  github-username:
+    description: 'The GitHub username of the employee to look up'
+    required: true
+  slack-token:
+    description: 'The organizational Slack access token to look up users'
+    required: true
+  slack-bot-token:
+    description: 'The organizational Slack access token to send chat messages'
+    required: true
+
+outputs:
+  time:
+    description: 'The time the message was sent'
+    value: ${{ steps.slack-send.outputs.ts }}
+
+branding:
+  color: red
+  icon: send
+  
+runs:
+  using: composite
+  steps:
+
+  - name: Set reference to current action version
+    id: set-action-version
+    run: echo "ref=$ACTION_REF" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      ACTION_REF: ${{ github.action_ref }}
+
+  - name: Setup workaround for local actions
+    uses: actions/checkout@v4
+    with:
+      repository: kamranayub/pluralsight-authoring-github-actions-demo-action
+      ref: ${{ steps.set-action-version.outputs.ref }}
+      token: ${{ inputs.github-token }}
+      path: .local-action-cache
+      sparse-checkout: |
+        get-employee-js-action
+
+  - id: get-employee-js
+    uses: './.local-action-cache/get-employee-js-action'
+    with:
+      github-username: ${{ inputs.github-username }}
+      github-token: ${{ inputs.github-token }}
+      slack-token: ${{ inputs.slack-token }}
+
+  - id: slack-send
+    uses: slackapi/slack-github-action@v1.26.0
+    with:
+      channel-id: ${{ steps.get-employee-js.outputs.slack-user-id }}
+      slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+    env:
+      SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
